@@ -53,9 +53,9 @@ TEST(OnlineFileSource, TEST_REQUIRES_SERVER(TemporaryError)) {
     OnlineFileSource fs;
 
     const auto start = Clock::now();
+    int counter = 0;
 
     auto req = fs.request({ Resource::Unknown, "http://127.0.0.1:3000/temporary-error" }, [&](Response res) {
-        static int counter = 0;
         switch (counter++) {
         case 0: {
             const auto duration = std::chrono::duration<const double>(Clock::now() - start).count();
@@ -93,10 +93,10 @@ TEST(OnlineFileSource, TEST_REQUIRES_SERVER(ConnectionError)) {
     OnlineFileSource fs;
 
     const auto start = Clock::now();
+    int counter = 0;
+    int wait = 0;
 
     std::unique_ptr<AsyncRequest> req = fs.request({ Resource::Unknown, "http://127.0.0.1:3001/" }, [&](Response res) {
-        static int counter = 0;
-        static int wait = 0;
         const auto duration = std::chrono::duration<const double>(Clock::now() - start).count();
         EXPECT_LT(wait - 0.01, duration) << "Backoff timer didn't wait 1 second";
         EXPECT_GT(wait + 0.2, duration) << "Backoff timer fired too late";
@@ -158,10 +158,6 @@ TEST(OnlineFileSource, TEST_REQUIRES_SERVER(RetryDelayOnExpiredTile)) {
         EXPECT_EQ(nullptr, res.error);
         EXPECT_GT(util::now(), *res.expires);
         EXPECT_FALSE(res.mustRevalidate);
-    });
-
-    util::Timer timer;
-    timer.start(Milliseconds(500), Duration::zero(), [&] () {
         loop.stop();
     });
 
@@ -307,12 +303,13 @@ TEST(OnlineFileSource, TEST_REQUIRES_SERVER(NetworkStatusChange)) {
 TEST(OnlineFileSource, TEST_REQUIRES_SERVER(NetworkStatusChangePreempt)) {
     util::RunLoop loop;
     OnlineFileSource fs;
+    fs.pause();
 
     const auto start = Clock::now();
+    int counter = 0;
 
     const Resource resource{ Resource::Unknown, "http://127.0.0.1:3001/test" };
     std::unique_ptr<AsyncRequest> req = fs.request(resource, [&](Response res) {
-        static int counter = 0;
         const auto duration = std::chrono::duration<const double>(Clock::now() - start).count();
         if (counter == 0) {
             EXPECT_GT(0.2, duration) << "Response came in too late";
@@ -342,6 +339,7 @@ TEST(OnlineFileSource, TEST_REQUIRES_SERVER(NetworkStatusChangePreempt)) {
         mbgl::NetworkStatus::Reachable();
     });
 
+    fs.resume();
     loop.run();
 }
 
@@ -450,8 +448,11 @@ TEST(OnlineFileSource, TEST_REQUIRES_SERVER(LowHighPriorityRequests)) {
     std::size_t response_counter = 0;
     const std::size_t NUM_REQUESTS = 3;
 
-    fs.setProperty("max-concurrent-requests", 1u);
     NetworkStatus::Set(NetworkStatus::Status::Offline);
+    fs.setProperty("max-concurrent-requests", 1u);
+    // After DefaultFileSource was split, OnlineFileSource lives on a separate
+    // thread. Pause OnlineFileSource, so that messages are queued for processing.
+    fs.pause();
 
     // First regular request.
     Resource regular1{Resource::Unknown, "http://127.0.0.1:3000/load/1"};
@@ -477,8 +478,8 @@ TEST(OnlineFileSource, TEST_REQUIRES_SERVER(LowHighPriorityRequests)) {
         req_2.reset();
     });
 
+    fs.resume();
     NetworkStatus::Set(NetworkStatus::Status::Online);
-
     loop.run();
 }
 
@@ -490,9 +491,9 @@ TEST(OnlineFileSource, TEST_REQUIRES_SERVER(LowHighPriorityRequestsMany)) {
     int correct_low = 0;
     int correct_regular = 0;
 
-    fs.setProperty("max-concurrent-requests", 1u);
-
     NetworkStatus::Set(NetworkStatus::Status::Offline);
+    fs.setProperty("max-concurrent-requests", 1u);
+    fs.pause();
 
     std::vector<std::unique_ptr<AsyncRequest>> collector;
 
@@ -532,8 +533,8 @@ TEST(OnlineFileSource, TEST_REQUIRES_SERVER(LowHighPriorityRequestsMany)) {
         }
     }
 
+    fs.resume();
     NetworkStatus::Set(NetworkStatus::Status::Online);
-
     loop.run();
 }
 
