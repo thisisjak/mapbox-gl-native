@@ -8,6 +8,7 @@
 #include <mbgl/util/stopwatch.hpp>
 
 #include <cassert>
+#include <map>
 
 namespace mbgl {
 
@@ -170,7 +171,7 @@ private:
     const std::shared_ptr<FileSource> onlineFileSource;
     const bool supportsCacheOnlyRequests_;
     std::unique_ptr<Actor<ResourceLoaderRequestor>> requestor;
-    std::unordered_map<AsyncRequest*, std::unique_ptr<AsyncRequest>> tasks;
+    std::map<AsyncRequest*, std::unique_ptr<AsyncRequest>> tasks;
 };
 
 ResourceLoaderRequestor::ResourceLoaderRequestor(MainResourceLoader::Impl& impl_) : impl(impl_) {}

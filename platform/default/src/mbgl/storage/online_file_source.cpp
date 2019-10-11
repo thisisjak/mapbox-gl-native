@@ -23,8 +23,6 @@
 #include <cassert>
 #include <list>
 #include <map>
-#include <unordered_map>
-#include <unordered_set>
 
 namespace mbgl {
 
@@ -157,7 +155,7 @@ public:
         auto request = pendingRequests.pop();
 
         if (request) {
-            activateRequest(*request);
+            activateRequest(request);
         }
     }
 
@@ -249,9 +247,9 @@ private:
             }
         }
 
-        optional<OnlineFileRequest*> pop() {
+        OnlineFileRequest* pop() {
             if (queue.empty()) {
-                return optional<OnlineFileRequest*>();
+                return nullptr;
             }
 
             if (queue.begin() == firstLowPriorityRequest) {
@@ -260,7 +258,7 @@ private:
 
             OnlineFileRequest* next = queue.front();
             queue.pop_front();
-            return optional<OnlineFileRequest*>(next);
+            return next;
         }
 
         bool contains(OnlineFileRequest* request) const {
@@ -282,11 +280,11 @@ private:
      * Requests in any state are in `allRequests`. Requests in the pending state are in
      * `pendingRequests`. Requests in the active state are in `activeRequests`.
      */
-    std::unordered_set<OnlineFileRequest*> allRequests;
+    std::set<OnlineFileRequest*> allRequests;
 
     PendingRequests pendingRequests;
 
-    std::unordered_set<OnlineFileRequest*> activeRequests;
+    std::set<OnlineFileRequest*> activeRequests;
 
     bool online = true;
     uint32_t maximumConcurrentRequests;

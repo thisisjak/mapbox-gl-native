@@ -8,6 +8,8 @@
 #include <mbgl/util/constants.hpp>
 #include <mbgl/util/thread.hpp>
 
+#include <map>
+
 namespace mbgl {
 
 class DatabaseFileSourceThread {
@@ -131,7 +133,7 @@ private:
     }
 
     std::unique_ptr<OfflineDatabase> db;
-    std::unordered_map<int64_t, std::unique_ptr<OfflineDownload>> downloads;
+    std::map<int64_t, std::unique_ptr<OfflineDownload>> downloads;
     std::shared_ptr<FileSource> onlineFileSource;
 };
 
