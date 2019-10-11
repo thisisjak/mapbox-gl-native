@@ -18,9 +18,7 @@ namespace mbgl {
 
 class AssetFileSource::Impl {
 public:
-    Impl(ActorRef<Impl>, std::string root_)
-        : root(std::move(root_)) {
-    }
+    Impl(std::string root_) : root(std::move(root_)) {}
 
     void request(const std::string& url, ActorRef<FileSourceRequest> req) {
         if (!acceptsURL(url)) {

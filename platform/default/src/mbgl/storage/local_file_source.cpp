@@ -18,8 +18,6 @@ namespace mbgl {
 
 class LocalFileSource::Impl {
 public:
-    Impl(ActorRef<Impl>) {}
-
     void request(const std::string& url, ActorRef<FileSourceRequest> req) {
         if (!acceptsURL(url)) {
             Response response;
