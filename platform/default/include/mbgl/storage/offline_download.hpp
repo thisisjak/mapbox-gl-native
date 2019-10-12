@@ -28,7 +28,7 @@ class Parser;
  */
 class OfflineDownload {
 public:
-    OfflineDownload(int64_t id, const OfflineRegionDefinition&, OfflineDatabase& offline, FileSource& online);
+    OfflineDownload(int64_t id, OfflineRegionDefinition, OfflineDatabase& offline, FileSource& online);
     ~OfflineDownload();
 
     void setObserver(std::unique_ptr<OfflineRegionObserver>);
