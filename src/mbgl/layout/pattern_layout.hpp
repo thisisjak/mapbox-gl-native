@@ -19,14 +19,21 @@ using PatternLayerMap = std::map<std::string, PatternDependency>;
 
 class PatternFeature  {
 public:
-    const uint32_t i;
+    friend bool operator < (const PatternFeature& lhs, const PatternFeature& rhs) {
+        return lhs.sortKey < rhs.sortKey;
+    }
+    
+    uint32_t i;
     std::unique_ptr<GeometryTileFeature> feature;
     PatternLayerMap patterns;
+    float sortKey;
 };
 
 template <class BucketType,
           class LayerPropertiesType,
           class PatternPropertyType,
+          class SortKeyPropertyType = void,
+          class UnevaluatedLayoutPropertiesType = typename style::Properties<>::Unevaluated,
           class PossiblyEvaluatedLayoutPropertiesType = typename style::Properties<>::PossiblyEvaluated>
 class PatternLayout : public Layout {
 public:
@@ -40,7 +47,8 @@ public:
           hasPattern(false) {
         assert(!group.empty());
         auto leaderLayerProperties = staticImmutableCast<LayerPropertiesType>(group.front());
-        layout = leaderLayerProperties->layerImpl().layout.evaluate(PropertyEvaluationParameters(zoom));
+        unevaluatedLayout = leaderLayerProperties->layerImpl().layout;
+        layout = unevaluatedLayout.evaluate(PropertyEvaluationParameters(zoom));
         sourceLayerID = leaderLayerProperties->layerImpl().sourceLayer;
         bucketLeaderID = leaderLayerProperties->layerImpl().id;
 
@@ -98,7 +106,14 @@ public:
                     }
                 }
             }
-            features.push_back({static_cast<uint32_t>(i), std::move(feature), patternDependencyMap});
+            
+            auto sortKey = evaluateSortKey<SortKeyPropertyType>(*feature);
+
+            features.push_back({static_cast<uint32_t>(i), std::move(feature), patternDependencyMap, sortKey});
+        }
+                        
+        if (layoutHasSortKeyProperty<SortKeyPropertyType>()) {
+            std::sort(features.begin(), features.end());
         }
     };
 
@@ -127,11 +142,33 @@ public:
     };
 
 private:
+    template <typename SortKeyPropertyT>
+    bool layoutHasSortKeyProperty() {
+        return !unevaluatedLayout.template get<SortKeyPropertyT>().isUndefined();
+    }
+
+    template <>
+    bool layoutHasSortKeyProperty<void>() {
+        return false;
+    }
+
+    template <typename SortKeyPropertyT>
+    float evaluateSortKey(const GeometryTileFeature& sourceFeature) {
+        const auto sortKeyProperty = layout.template get<SortKeyPropertyT>();
+        return sortKeyProperty.evaluate(sourceFeature, zoom, SortKeyPropertyT::defaultValue());
+    }
+
+    template <>
+    float evaluateSortKey<void>(const GeometryTileFeature&) {
+        return 0.0;
+    }
+    
     std::map<std::string, Immutable<style::LayerProperties>> layerPropertiesMap;
     std::string bucketLeaderID;
 
     const std::unique_ptr<GeometryTileLayer> sourceLayer;
     std::vector<PatternFeature> features;
+    UnevaluatedLayoutPropertiesType unevaluatedLayout;
     PossiblyEvaluatedLayoutPropertiesType layout;
 
     const float zoom;
