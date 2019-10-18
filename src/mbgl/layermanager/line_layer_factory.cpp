@@ -28,7 +28,8 @@ std::unique_ptr<Layout> LineLayerFactory::createLayout(const LayoutParameters& p
                                                        std::unique_ptr<GeometryTileLayer> layer,
                                                        const std::vector<Immutable<style::LayerProperties>>& group) noexcept {
     using namespace style;
-    using LayoutType = PatternLayout<LineBucket, LineLayerProperties, LinePattern, LineLayoutProperties::PossiblyEvaluated>;
+
+    using LayoutType = PatternLayout<LineBucket, LineLayerProperties, LinePattern, LineSortKey, LineLayoutProperties::Unevaluated, LineLayoutProperties::PossiblyEvaluated>;
     return std::make_unique<LayoutType>(parameters.bucketParameters, group, std::move(layer), parameters.imageDependencies);
 }
 
