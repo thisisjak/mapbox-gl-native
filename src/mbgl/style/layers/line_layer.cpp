@@ -125,6 +125,22 @@ void LineLayer::setLineRoundLimit(const PropertyValue<float>& value) {
     baseImpl = std::move(impl_);
     observer->onLayerChanged(*this);
 }
+PropertyValue<float> LineLayer::getDefaultLineSortKey() {
+    return LineSortKey::defaultValue();
+}
+
+const PropertyValue<float>& LineLayer::getLineSortKey() const {
+    return impl().layout.get<LineSortKey>();
+}
+
+void LineLayer::setLineSortKey(const PropertyValue<float>& value) {
+    if (value == getLineSortKey())
+        return;
+    auto impl_ = mutableImpl();
+    impl_->layout.get<LineSortKey>() = value;
+    baseImpl = std::move(impl_);
+    observer->onLayerChanged(*this);
+}
 
 // Paint properties
 
@@ -457,6 +473,7 @@ enum class Property : uint8_t {
     LineJoin,
     LineMiterLimit,
     LineRoundLimit,
+    LineSortKey,
 };
 
 template <typename T>
@@ -490,7 +507,8 @@ MAPBOX_ETERNAL_CONSTEXPR const auto layerProperties = mapbox::eternal::hash_map<
      {"line-cap", toUint8(Property::LineCap)},
      {"line-join", toUint8(Property::LineJoin)},
      {"line-miter-limit", toUint8(Property::LineMiterLimit)},
-     {"line-round-limit", toUint8(Property::LineRoundLimit)}});
+     {"line-round-limit", toUint8(Property::LineRoundLimit)},
+     {"line-sort-key", toUint8(Property::LineSortKey)}});
 
 constexpr uint8_t lastPaintPropertyIndex = toUint8(Property::LineWidthTransition);
 } // namespace
@@ -734,6 +752,8 @@ StyleProperty LineLayer::getProperty(const std::string& name) const {
             return makeStyleProperty(getLineMiterLimit());
         case Property::LineRoundLimit:
             return makeStyleProperty(getLineRoundLimit());
+        case Property::LineSortKey:
+            return makeStyleProperty(getLineSortKey());
     }
     return {};
 }
@@ -790,6 +810,18 @@ optional<Error> LineLayer::setLayoutProperty(const std::string& name, const Conv
             setLineRoundLimit(*typedValue);
             return nullopt;
         }
+        
+    }
+    
+    if (property == Property::LineSortKey) {
+        Error error;
+        optional<PropertyValue<float>> typedValue = convert<PropertyValue<float>>(value, error, true, false);
+        if (!typedValue) {
+            return error;
+        }
+        
+        setLineSortKey(*typedValue);
+        return nullopt;
         
     }
     

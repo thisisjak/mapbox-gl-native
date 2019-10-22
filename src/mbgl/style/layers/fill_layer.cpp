@@ -55,11 +55,28 @@ std::unique_ptr<Layer> FillLayer::cloneRef(const std::string& id_) const {
     return std::make_unique<FillLayer>(std::move(impl_));
 }
 
-void FillLayer::Impl::stringifyLayout(rapidjson::Writer<rapidjson::StringBuffer>&) const {
+void FillLayer::Impl::stringifyLayout(rapidjson::Writer<rapidjson::StringBuffer>& writer) const {
+    layout.stringify(writer);
 }
 
 // Layout properties
 
+PropertyValue<float> FillLayer::getDefaultFillSortKey() {
+    return FillSortKey::defaultValue();
+}
+
+const PropertyValue<float>& FillLayer::getFillSortKey() const {
+    return impl().layout.get<FillSortKey>();
+}
+
+void FillLayer::setFillSortKey(const PropertyValue<float>& value) {
+    if (value == getFillSortKey())
+        return;
+    auto impl_ = mutableImpl();
+    impl_->layout.get<FillSortKey>() = value;
+    baseImpl = std::move(impl_);
+    observer->onLayerChanged(*this);
+}
 
 // Paint properties
 
@@ -271,6 +288,7 @@ enum class Property : uint8_t {
     FillPatternTransition,
     FillTranslateTransition,
     FillTranslateAnchorTransition,
+    FillSortKey,
 };
 
 template <typename T>
@@ -292,7 +310,8 @@ MAPBOX_ETERNAL_CONSTEXPR const auto layerProperties = mapbox::eternal::hash_map<
      {"fill-outline-color-transition", toUint8(Property::FillOutlineColorTransition)},
      {"fill-pattern-transition", toUint8(Property::FillPatternTransition)},
      {"fill-translate-transition", toUint8(Property::FillTranslateTransition)},
-     {"fill-translate-anchor-transition", toUint8(Property::FillTranslateAnchorTransition)}});
+     {"fill-translate-anchor-transition", toUint8(Property::FillTranslateAnchorTransition)},
+     {"fill-sort-key", toUint8(Property::FillSortKey)}});
 
 constexpr uint8_t lastPaintPropertyIndex = toUint8(Property::FillTranslateAnchorTransition);
 } // namespace
@@ -465,6 +484,8 @@ StyleProperty FillLayer::getProperty(const std::string& name) const {
             return makeStyleProperty(getFillTranslateTransition());
         case Property::FillTranslateAnchorTransition:
             return makeStyleProperty(getFillTranslateAnchorTransition());
+        case Property::FillSortKey:
+            return makeStyleProperty(getFillSortKey());
     }
     return {};
 }
@@ -473,6 +494,26 @@ optional<Error> FillLayer::setLayoutProperty(const std::string& name, const Conv
     if (name == "visibility") {
         return Layer::setVisibility(value);
     }
+    const auto it = layerProperties.find(name.c_str());
+    if (it == layerProperties.end() || it->second <= lastPaintPropertyIndex) {
+        return Error { "layer doesn't support this property" };
+    }
+
+    auto property = static_cast<Property>(it->second);
+
+        
+    if (property == Property::FillSortKey) {
+        Error error;
+        optional<PropertyValue<float>> typedValue = convert<PropertyValue<float>>(value, error, true, false);
+        if (!typedValue) {
+            return error;
+        }
+        
+        setFillSortKey(*typedValue);
+        return nullopt;
+        
+    }
+    
 
     return Error { "layer doesn't support this property" };
 }
