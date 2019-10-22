@@ -73,8 +73,6 @@
   "render-tests/regressions/mapbox-gl-js#8026": "skip - js specific",
   "render-tests/fill-extrusion-geometry/linestring": "https://github.com/mapbox/mapbox-gl-native/pull/14240",
   "render-tests/circle-sort-key/literal": "https://github.com/mapbox/mapbox-gl-native/issues/15008",
-  "render-tests/fill-sort-key/literal": "https://github.com/mapbox/mapbox-gl-native/issues/15008",
-  "render-tests/line-sort-key/literal": "https://github.com/mapbox/mapbox-gl-native/issues/15008",
   "render-tests/regressions/mapbox-gl-js#8817": "skip - https://github.com/mapbox/mapbox-gl-native/issues/15737",
   "render-tests/text-max-width/zero-width-point-placement": "https://github.com/mapbox/mapbox-gl-native/issues/15648",
   "render-tests/icon-image/image-expression": "https://github.com/mapbox/mapbox-gl-native/issues/15800",
