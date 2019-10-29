@@ -346,6 +346,7 @@ add_library(
     ${MBGL_ROOT}/src/mbgl/layout/clip_lines.cpp
     ${MBGL_ROOT}/src/mbgl/layout/clip_lines.hpp
     ${MBGL_ROOT}/src/mbgl/layout/layout.hpp
+    ${MBGL_ROOT}/src/mbgl/layout/circle_layout.hpp
     ${MBGL_ROOT}/src/mbgl/layout/merge_lines.cpp
     ${MBGL_ROOT}/src/mbgl/layout/merge_lines.hpp
     ${MBGL_ROOT}/src/mbgl/layout/pattern_layout.hpp

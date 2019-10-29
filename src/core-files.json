@@ -569,6 +569,7 @@
         "mbgl/gl/vertex_array.hpp": "src/mbgl/gl/vertex_array.hpp",
         "mbgl/gl/vertex_array_extension.hpp": "src/mbgl/gl/vertex_array_extension.hpp",
         "mbgl/gl/vertex_buffer_resource.hpp": "src/mbgl/gl/vertex_buffer_resource.hpp",
+        "mbgl/layout/circle_layout.hpp": "src/mbgl/layout/circle_layout.hpp",
         "mbgl/layout/clip_lines.hpp": "src/mbgl/layout/clip_lines.hpp",
         "mbgl/layout/layout.hpp": "src/mbgl/layout/layout.hpp",
         "mbgl/layout/merge_lines.hpp": "src/mbgl/layout/merge_lines.hpp",
