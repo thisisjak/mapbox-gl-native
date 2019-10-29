@@ -8,6 +8,7 @@ bool CircleLayer::Impl::hasLayoutDifference(const Layer::Impl& other) const {
     const auto& impl = static_cast<const style::CircleLayer::Impl&>(other);
     return filter     != impl.filter ||
            visibility != impl.visibility ||
+           layout     != impl.layout ||
            paint.hasDataDrivenPropertyDifference(impl.paint);
 }
 
