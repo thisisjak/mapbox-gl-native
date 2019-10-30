@@ -23,9 +23,6 @@ public:
                  const float zoom);
     ~CircleBucket() override;
 
-    void addFeature(const GeometryTileFeature&, const GeometryCollection&, const ImagePositions&,
-                    const PatternLayerMap&, std::size_t) override;
-
     bool hasData() const override;
 
     void upload(gfx::UploadPass&) override;

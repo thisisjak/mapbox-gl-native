@@ -63,12 +63,12 @@ public:
     void createBucket(const ImagePositions&, std::unique_ptr<FeatureIndex>& featureIndex, std::unordered_map<std::string, LayerRenderData>& renderData, const bool, const bool) override {
         auto bucket = std::make_shared<CircleBucket>(layerPropertiesMap, mode, zoom);
 
-        for (auto & circleFeature : features) {
+        for (auto& circleFeature : features) {
             const auto i = circleFeature.i;
             std::unique_ptr<GeometryTileFeature> feature = std::move(circleFeature.feature);
             const GeometryCollection& geometries = feature->getGeometries();
 
-            bucket->addFeature(*feature, geometries, {}, {}, i);
+            addCircle(*bucket, *feature, geometries, i, circleFeature.sortKey);
             featureIndex->insert(geometries, i, sourceLayerID, bucketLeaderID);
         }
         if (bucket->hasData()) {
@@ -79,6 +79,62 @@ public:
     };
 
 private:
+    void addCircle(CircleBucket& bucket, const GeometryTileFeature& feature, const GeometryCollection& geometry, std::size_t featureIndex, float sortKey) {
+        constexpr const uint16_t vertexLength = 4;
+
+        auto& segments = bucket.segments;
+        auto& vertices = bucket.vertices;
+        auto& triangles = bucket.triangles;
+
+        for (auto& circle : geometry) {
+            for(auto& point : circle) {
+                auto x = point.x;
+                auto y = point.y;
+
+                // Do not include points that are outside the tile boundaries.
+                // Include all points in Still mode. You need to include points from
+                // neighbouring tiles so that they are not clipped at tile boundaries.
+                if ((mode == MapMode::Continuous) &&
+                    (x < 0 || x >= util::EXTENT || y < 0 || y >= util::EXTENT)) continue;
+
+                if (segments.empty() || segments.back().vertexLength + vertexLength > std::numeric_limits<uint16_t>::max()) {
+                    // Move to a new segments because the old one can't hold the geometry.
+                    segments.emplace_back(vertices.elements(), triangles.elements(), 0ul, 0ul, sortKey);
+                }
+
+                // this geometry will be of the Point type, and we'll derive
+                // two triangles from it.
+                //
+                // ┌─────────┐
+                // │ 4     3 │
+                // │         │
+                // │ 1     2 │
+                // └─────────┘
+                //
+                vertices.emplace_back(CircleProgram::vertex(point, -1, -1)); // 1
+                vertices.emplace_back(CircleProgram::vertex(point,  1, -1)); // 2
+                vertices.emplace_back(CircleProgram::vertex(point,  1,  1)); // 3
+                vertices.emplace_back(CircleProgram::vertex(point, -1,  1)); // 4
+
+                auto& segment = segments.back();
+                assert(segment.vertexLength <= std::numeric_limits<uint16_t>::max());
+                uint16_t index = segment.vertexLength;
+
+                // 1, 2, 3
+                // 1, 4, 3
+                triangles.emplace_back(index, index + 1, index + 2);
+                triangles.emplace_back(index, index + 3, index + 2);
+
+                segment.vertexLength += vertexLength;
+                segment.indexLength += 6;
+            }
+        }
+
+        for (auto& pair : bucket.paintPropertyBinders) {
+            pair.second.populateVertexVectors(feature, vertices.elements(), featureIndex, {}, {});
+        }
+    }
+
     float evaluateSortKey(const GeometryTileFeature& sourceFeature) {
         const auto sortKeyProperty = layout.template get<style::CircleSortKey>();
         return sortKeyProperty.evaluate(sourceFeature, zoom, style::CircleSortKey::defaultValue());
