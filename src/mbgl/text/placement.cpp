@@ -173,11 +173,13 @@ void Placement::placeBucket(
     auto partiallyEvaluatedTextSize = bucket.textSizeBinder->evaluateForZoom(state.getZoom());
     auto partiallyEvaluatedIconSize = bucket.iconSizeBinder->evaluateForZoom(state.getZoom());
 
+    optional<CollisionTileBoundaries> tileBorders;
     optional<CollisionTileBoundaries> avoidEdges;
-    if (mapMode == MapMode::Tile && (layout.get<style::SymbolAvoidEdges>() ||
-                                     layout.get<style::SymbolPlacement>() == style::SymbolPlacementType::Line ||
-                                     !layout.get<style::TextVariableAnchor>().empty())) {
-        avoidEdges = collisionIndex.projectTileBoundaries(posMatrix);
+    if (mapMode == MapMode::Tile) tileBorders = collisionIndex.projectTileBoundaries(posMatrix);
+
+    if (tileBorders && (layout.get<style::SymbolAvoidEdges>() ||
+                        layout.get<style::SymbolPlacement>() == style::SymbolPlacementType::Line)) {
+        avoidEdges = tileBorders;
     }
 
     const bool textAllowOverlap = layout.get<style::TextAllowOverlap>();
@@ -261,14 +263,23 @@ void Placement::placeBucket(
 
             // Line or point label placement
             if (variableTextAnchors.empty()) {
-                const auto placeFeature = [&] (const CollisionFeature& collisionFeature, style::TextWritingModeType orientation) {
+                const auto placeFeature = [&](const CollisionFeature& collisionFeature,
+                                              style::TextWritingModeType orientation) {
                     textBoxes.clear();
-                    auto placedFeature = collisionIndex.placeFeature(collisionFeature, {},
-                                                                     posMatrix, textLabelPlaneMatrix, pixelRatio,
-                                                                     placedSymbol, scale, fontSize,
+                    auto placedFeature = collisionIndex.placeFeature(collisionFeature,
+                                                                     {},
+                                                                     posMatrix,
+                                                                     textLabelPlaneMatrix,
+                                                                     pixelRatio,
+                                                                     placedSymbol,
+                                                                     scale,
+                                                                     fontSize,
                                                                      layout.get<style::TextAllowOverlap>(),
                                                                      pitchWithMap,
-                                                                     params.showCollisionBoxes, avoidEdges, collisionGroup.second, textBoxes);
+                                                                     params.showCollisionBoxes,
+                                                                     avoidEdges,
+                                                                     collisionGroup.second,
+                                                                     textBoxes);
                     if (placedFeature.first) {
                         placedOrientations.emplace(symbolInstance.crossTileID, orientation);
                     }
@@ -328,8 +339,26 @@ void Placement::placeBucket(
                     std::pair<bool, bool> placedFeature = {false, false};
                     const size_t anchorsSize = variableTextAnchors.size();
                     const size_t placementAttempts = textAllowOverlap ? anchorsSize * 2 : anchorsSize;
+
+                    bool stickToFirstAnchor = false;
+                    assert(tileBorders);
+                    if (!avoidEdges) {
+                        shift = calculateVariableLayoutOffset(variableTextAnchors.front(),
+                                                              width,
+                                                              height,
+                                                              symbolInstance.variableTextOffset,
+                                                              textBoxScale,
+                                                              rotateWithMap,
+                                                              pitchWithMap,
+                                                              state.getBearing());
+                        stickToFirstAnchor = collisionIndex.featureIntersectsTileBorders(
+                            textCollisionFeature, shift, posMatrix, pixelRatio, *tileBorders);
+                    }
+
                     for (size_t i = 0u; i < placementAttempts; ++i) {
                         auto anchor = variableTextAnchors[i % anchorsSize];
+                        if (stickToFirstAnchor && anchor != variableTextAnchors.front()) continue;
+
                         const bool allowOverlap = (i >= anchorsSize);
                         shift = calculateVariableLayoutOffset(anchor,
                                                               width,
@@ -453,14 +482,21 @@ void Placement::placeBucket(
             const auto& iconBuffer = symbolInstance.hasSdfIcon() ? bucket.sdfIcon : bucket.icon;
             const PlacedSymbol& placedSymbol = iconBuffer.placedSymbols.at(*symbolInstance.placedIconIndex);
             const float fontSize = evaluateSizeForFeature(partiallyEvaluatedIconSize, placedSymbol);
-            const auto& placeIconFeature = [&] (const CollisionFeature& collisionFeature) {
-                return collisionIndex.placeFeature(collisionFeature, shift,
-                                                   posMatrix, iconLabelPlaneMatrix, pixelRatio,
-                                                   placedSymbol, scale, fontSize,
+            const auto& placeIconFeature = [&](const CollisionFeature& collisionFeature) {
+                return collisionIndex.placeFeature(collisionFeature,
+                                                   shift,
+                                                   posMatrix,
+                                                   iconLabelPlaneMatrix,
+                                                   pixelRatio,
+                                                   placedSymbol,
+                                                   scale,
+                                                   fontSize,
                                                    layout.get<style::IconAllowOverlap>(),
                                                    pitchWithMap,
-                                                   params.showCollisionBoxes, avoidEdges,
-                                                   collisionGroup.second, iconBoxes);
+                                                   params.showCollisionBoxes,
+                                                   avoidEdges,
+                                                   collisionGroup.second,
+                                                   iconBoxes);
             };
 
             std::pair<bool, bool> placedIcon = {false, false};
