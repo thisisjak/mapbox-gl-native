@@ -145,7 +145,7 @@ private:
     std::string bucketLeaderID;
 
     const std::unique_ptr<GeometryTileLayer> sourceLayer;
-    std::vector<CircleFeature> features;
+    std::list<CircleFeature> features;
     typename style::CircleLayoutProperties::Unevaluated unevaluatedLayout;
     typename style::CircleLayoutProperties::PossiblyEvaluated layout;
 
