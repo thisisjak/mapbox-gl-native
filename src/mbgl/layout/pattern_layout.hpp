@@ -27,6 +27,22 @@ public:
     sortKey(sortKey_)
     {}
     
+    PatternFeature(PatternFeature&& pt) noexcept :
+    i(pt.i),
+    feature(std::move(pt.feature)),
+    patterns(pt.patterns),
+    sortKey(pt.sortKey)
+    {}
+    
+    PatternFeature& operator=(PatternFeature&& pt) noexcept
+    {
+        i = pt.i;
+        feature = std::move(pt.feature);
+        patterns = pt.patterns;
+        sortKey = pt.sortKey;
+        return *this;
+    }
+    
     friend bool operator < (const PatternFeature& lhs, const PatternFeature& rhs) {
         return lhs.sortKey < rhs.sortKey;
     }
@@ -109,12 +125,10 @@ public:
             }
             
             auto sortKey = evaluateSortKey<SortKeyPropertyType>(*feature);
-
-            features.emplace_back(i, std::move(feature), patternDependencyMap, sortKey);
-        }
-                        
-        if (layoutHasSortKeyProperty<SortKeyPropertyType>()) {
-            std::sort(features.begin(), features.end());
+            
+            PatternFeature patternFeature{i, std::move(feature), patternDependencyMap, sortKey};
+            const auto sortPosition = std::lower_bound(features.cbegin(), features.cend(), patternFeature);
+            features.insert(sortPosition, std::move(patternFeature));
         }
     };
 
