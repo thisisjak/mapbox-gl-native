@@ -19,7 +19,9 @@ using PatternLayerMap = std::map<std::string, PatternDependency>;
 
 class PatternFeature  {
 public:
-    PatternFeature(const uint32_t& i_, std::unique_ptr<GeometryTileFeature>&& feature_, const PatternLayerMap& patterns_, const float sortKey_) :
+    using IndexType = size_t;
+    
+    PatternFeature(const IndexType& i_, std::unique_ptr<GeometryTileFeature>&& feature_, const PatternLayerMap& patterns_, const float sortKey_) :
     i(i_),
     feature(std::move(feature_)),
     patterns(patterns_),
@@ -30,7 +32,7 @@ public:
         return lhs.sortKey < rhs.sortKey;
     }
     
-    uint32_t i;
+    IndexType i;
     std::unique_ptr<GeometryTileFeature> feature;
     PatternLayerMap patterns;
     float sortKey;
@@ -116,7 +118,7 @@ public:
             
             auto sortKey = evaluateSortKey<SortKeyPropertyType>(*feature);
 
-            features.emplace_back(static_cast<uint32_t>(i), std::move(feature), patternDependencyMap, sortKey);
+            features.emplace_back(i, std::move(feature), patternDependencyMap, sortKey);
         }
                         
         if (layoutHasSortKeyProperty<SortKeyPropertyType>()) {
