@@ -15,7 +15,7 @@ public:
         return lhs.sortKey < rhs.sortKey;
     }
 
-    uint32_t i;
+    size_t i;
     std::unique_ptr<GeometryTileFeature> feature;
     float sortKey;
 };
@@ -48,7 +48,7 @@ public:
                 continue;
 
             auto sortKey = evaluateSortKey(*feature);
-            features.push_back({static_cast<uint32_t>(i), std::move(feature), sortKey});
+            features.push_back({i, std::move(feature), sortKey});
         }
 
         std::sort(features.begin(), features.end());
