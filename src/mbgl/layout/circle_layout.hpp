@@ -48,10 +48,11 @@ public:
                 continue;
 
             auto sortKey = evaluateSortKey(*feature);
-            features.push_back({i, std::move(feature), sortKey});
+            
+            CircleFeature circleFeature{i, std::move(feature), sortKey};
+            const auto sortPosition = std::lower_bound(features.cbegin(), features.cend(), circleFeature);
+            features.insert(sortPosition, std::move(circleFeature));
         }
-
-        std::sort(features.begin(), features.end());
     };
 
     ~CircleLayout() final = default;
