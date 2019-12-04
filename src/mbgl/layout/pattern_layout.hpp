@@ -1,4 +1,5 @@
 #pragma once
+#include <list>
 #include <mbgl/layout/layout.hpp>
 #include <mbgl/renderer/bucket_parameters.hpp>
 #include <mbgl/geometry/feature_index.hpp>
@@ -182,7 +183,7 @@ private:
     std::string bucketLeaderID;
 
     const std::unique_ptr<GeometryTileLayer> sourceLayer;
-    std::vector<PatternFeature> features;
+    std::list<PatternFeature> features;
     typename LayoutPropertiesType::Unevaluated unevaluatedLayout;
     typename LayoutPropertiesType::PossiblyEvaluated layout;
 
