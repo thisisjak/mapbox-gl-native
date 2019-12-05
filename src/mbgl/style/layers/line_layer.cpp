@@ -134,8 +134,7 @@ const PropertyValue<float>& LineLayer::getLineSortKey() const {
 }
 
 void LineLayer::setLineSortKey(const PropertyValue<float>& value) {
-    if (value == getLineSortKey())
-        return;
+    if (value == getLineSortKey()) return;
     auto impl_ = mutableImpl();
     impl_->layout.get<LineSortKey>() = value;
     baseImpl = std::move(impl_);

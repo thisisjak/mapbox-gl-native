@@ -70,8 +70,7 @@ const PropertyValue<float>& FillLayer::getFillSortKey() const {
 }
 
 void FillLayer::setFillSortKey(const PropertyValue<float>& value) {
-    if (value == getFillSortKey())
-        return;
+    if (value == getFillSortKey()) return;
     auto impl_ = mutableImpl();
     impl_->layout.get<FillSortKey>() = value;
     baseImpl = std::move(impl_);

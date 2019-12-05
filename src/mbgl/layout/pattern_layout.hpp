@@ -21,34 +21,26 @@ using PatternLayerMap = std::map<std::string, PatternDependency>;
 class PatternFeature  {
 public:
     using IndexType = size_t;
-    
-    PatternFeature(const IndexType& i_, std::unique_ptr<GeometryTileFeature>&& feature_, const PatternLayerMap& patterns_, const float sortKey_) :
-    i(i_),
-    feature(std::move(feature_)),
-    patterns(patterns_),
-    sortKey(sortKey_)
-    {}
-    
-    PatternFeature(PatternFeature&& pt) noexcept :
-    i(pt.i),
-    feature(std::move(pt.feature)),
-    patterns(pt.patterns),
-    sortKey(pt.sortKey)
-    {}
-    
-    PatternFeature& operator=(PatternFeature&& pt) noexcept
-    {
+
+    PatternFeature(const IndexType& i_,
+                   std::unique_ptr<GeometryTileFeature>&& feature_,
+                   const PatternLayerMap& patterns_,
+                   const float sortKey_)
+        : i(i_), feature(std::move(feature_)), patterns(patterns_), sortKey(sortKey_) {}
+
+    PatternFeature(PatternFeature&& pt) noexcept
+        : i(pt.i), feature(std::move(pt.feature)), patterns(pt.patterns), sortKey(pt.sortKey) {}
+
+    PatternFeature& operator=(PatternFeature&& pt) noexcept {
         i = pt.i;
         feature = std::move(pt.feature);
         patterns = pt.patterns;
         sortKey = pt.sortKey;
         return *this;
     }
-    
-    friend bool operator < (const PatternFeature& lhs, const PatternFeature& rhs) {
-        return lhs.sortKey < rhs.sortKey;
-    }
-    
+
+    friend bool operator<(const PatternFeature& lhs, const PatternFeature& rhs) { return lhs.sortKey < rhs.sortKey; }
+
     IndexType i;
     std::unique_ptr<GeometryTileFeature> feature;
     PatternLayerMap patterns;
@@ -132,9 +124,9 @@ public:
                     }
                 }
             }
-            
+
             auto sortKey = evaluateSortKey<SortKeyPropertyType>(*feature);
-            
+
             PatternFeature patternFeature{i, std::move(feature), patternDependencyMap, sortKey};
             const auto sortPosition = std::lower_bound(features.cbegin(), features.cend(), patternFeature);
             features.insert(sortPosition, std::move(patternFeature));
@@ -186,7 +178,7 @@ private:
     float evaluateSortKey<void>(const GeometryTileFeature&) {
         return 0.0;
     }
-    
+
     std::map<std::string, Immutable<style::LayerProperties>> layerPropertiesMap;
     std::string bucketLeaderID;
 
