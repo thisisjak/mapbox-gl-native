@@ -50,9 +50,7 @@ public:
 template <class BucketType,
           class LayerPropertiesType,
           class PatternPropertyType,
-          class SortKeyPropertyType = void,
           class LayoutPropertiesType = typename style::Properties<>>
-
 class PatternLayout : public Layout {
 public:
     PatternLayout(const BucketParameters& parameters,
@@ -125,15 +123,13 @@ public:
                 }
             }
 
-            auto sortKey = evaluateSortKey<SortKeyPropertyType>(*feature);
+            auto sortKey = evaluateSortKey(*feature);
 
             PatternFeature patternFeature{i, std::move(feature), patternDependencyMap, sortKey};
             const auto sortPosition = std::lower_bound(features.cbegin(), features.cend(), patternFeature);
             features.insert(sortPosition, std::move(patternFeature));
         }
     };
-
-    ~PatternLayout() final = default;
 
     bool hasDependencies() const override {
         return hasPattern;
@@ -157,25 +153,8 @@ public:
         }
     };
 
-private:
-    template <typename SortKeyPropertyT>
-    bool layoutHasSortKeyProperty() {
-        return !unevaluatedLayout.template get<SortKeyPropertyT>().isUndefined();
-    }
-
-    template <>
-    bool layoutHasSortKeyProperty<void>() {
-        return false;
-    }
-
-    template <typename SortKeyPropertyT>
-    float evaluateSortKey(const GeometryTileFeature& sourceFeature) {
-        const auto sortKeyProperty = layout.template get<SortKeyPropertyT>();
-        return sortKeyProperty.evaluate(sourceFeature, zoom, SortKeyPropertyT::defaultValue());
-    }
-
-    template <>
-    float evaluateSortKey<void>(const GeometryTileFeature&) {
+protected:
+    virtual float evaluateSortKey(const GeometryTileFeature&) {
         return 0.0;
     }
 
@@ -191,6 +170,27 @@ private:
     const uint32_t overscaling;
     std::string sourceLayerID;
     bool hasPattern;
+};
+
+template <class BucketType,
+          class LayerPropertiesType,
+          class PatternPropertyType,
+          class SortKeyPropertyType,
+          class LayoutPropertiesType>
+class PatternLayoutSorted : public PatternLayout<BucketType, LayerPropertiesType, PatternPropertyType, LayoutPropertiesType> {
+public:
+    PatternLayoutSorted(const BucketParameters& parameters_,
+                  const std::vector<Immutable<style::LayerProperties>>& group_,
+                  std::unique_ptr<GeometryTileLayer> sourceLayer_,
+                  const LayoutParameters& layoutParameters_)
+    : PatternLayout<BucketType, LayerPropertiesType, PatternPropertyType, LayoutPropertiesType>(parameters_, group_, std::move(sourceLayer_), layoutParameters_) {
+    }
+
+protected:
+    virtual float evaluateSortKey(const GeometryTileFeature& sourceFeature) override {
+        const auto sortKeyProperty = this->layout.template get<SortKeyPropertyType>();
+        return sortKeyProperty.evaluate(sourceFeature, this->zoom, SortKeyPropertyType::defaultValue());
+    }
 };
 
 } // namespace mbgl
