@@ -126,7 +126,7 @@ public:
             auto sortKey = evaluateSortKey(*feature);
 
             PatternFeature patternFeature{i, std::move(feature), patternDependencyMap, sortKey};
-            const auto sortPosition = std::lower_bound(features.cbegin(), features.cend(), patternFeature);
+            const auto sortPosition = std::upper_bound(features.cbegin(), features.cend(), patternFeature);
             features.insert(sortPosition, std::move(patternFeature));
         }
     };
