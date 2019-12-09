@@ -257,7 +257,7 @@ void android_main(struct android_app* app) {
         auto runTestWithManifest =
             [&storagePath, &app, &outFd, &outEvents, &source](const std::string& manifest) -> bool {
             const std::string configFile = storagePath + manifest;
-            std::vector<std::string> arguments = {"mbgl-render-test-runner", "-p", configFile};
+            std::vector<std::string> arguments = {"mbgl-render-test-runner", "-p", configFile, "-u", "rebaseline"};
             std::vector<char*> argv;
             for (const auto& arg : arguments) {
                 argv.push_back(const_cast<char*>(arg.data()));
@@ -281,8 +281,8 @@ void android_main(struct android_app* app) {
             return result;
         };
 
-        auto result = runTestWithManifest("/android-manifest-probe-network-gfx.json");
-        result = runTestWithManifest("/android-manifest-probe-memory.json") && result;
+        // auto result = runTestWithManifest("/android-manifest-probe-network-gfx.json");
+        auto result = runTestWithManifest("/android-manifest-probe-memory.json");
         mbgl::Log::Info(mbgl::Event::General, "All tests are finished!");
         changeState(env, app, result);
     }

@@ -333,18 +333,26 @@ mbgl::optional<Manifest> ManifestParser::parseManifest(const std::string& manife
         }
         enbaleProbeTest = true;
     }
-    mbgl::filesystem::path expectedMetricPath;
-    if (document.HasMember("metric_path")) {
-        const auto& metricPathValue = document["metric_path"];
-        if (!metricPathValue.IsString()) {
+    std::vector<mbgl::filesystem::path> expectedMetricPaths;
+    if (document.HasMember("metric_paths")) {
+        const auto& metricPathValue = document["metric_paths"];
+        if (!metricPathValue.IsArray()) {
             mbgl::Log::Warning(mbgl::Event::General,
-                               "Invalid metric_path is provoided inside the manifest file: %s",
+                               "Provided metric_paths inside the manifest file: %s is not a valid array",
                                filePath.c_str());
             return mbgl::nullopt;
         }
-        expectedMetricPath = getValidPath(manifest.manifestPath, metricPathValue.GetString());
-        if (expectedMetricPath.empty()) {
-            return mbgl::nullopt;
+        for (const auto& value : metricPathValue.GetArray()) {
+            if (!value.IsString()) {
+                mbgl::Log::Warning(mbgl::Event::General,
+                                   "Invalid metric path item is provoided inside the manifest file: %s",
+                                   filePath.c_str());
+                return mbgl::nullopt;
+            }
+            expectedMetricPaths.emplace_back(getValidPath(manifest.manifestPath, value.GetString()));
+            if (expectedMetricPaths.back().empty()) {
+                return mbgl::nullopt;
+            }
         }
     }
     std::vector<mbgl::filesystem::path> expectationPaths{};
@@ -467,7 +475,7 @@ mbgl::optional<Manifest> ManifestParser::parseManifest(const std::string& manife
 
                 testPaths.emplace_back(testPath,
                                        getTestExpectations(defaultExpectationPath, testId, expectationPaths),
-                                       getTestExpectations(defaultExpectationPath, testId, {expectedMetricPath}));
+                                       getTestExpectations(defaultExpectationPath, testId, expectedMetricPaths));
             }
         }
     }
