@@ -31,10 +31,10 @@ SymbolInstanceSharedData::SymbolInstanceSharedData(GeometryCoordinates line_,
     : line(std::move(line_)) {
     // Create the quads used for rendering the icon and glyphs.
     if (shapedIcon) {
-        iconQuad = getIconQuad(*shapedIcon, getAnyShaping(shapedTextOrientations).writingMode, iconType);
+        iconQuads = getIconQuads(*shapedIcon, getAnyShaping(shapedTextOrientations).writingMode, iconType);
         if (verticallyShapedIcon) {
-            verticalIconQuad =
-                getIconQuad(*verticallyShapedIcon, shapedTextOrientations.vertical.writingMode, iconType);
+            verticalIconQuads =
+                getIconQuads(*verticallyShapedIcon, shapedTextOrientations.vertical.writingMode, iconType);
         }
     }
 
@@ -165,9 +165,9 @@ const SymbolQuads& SymbolInstance::verticalGlyphQuads() const {
     return sharedData->verticalGlyphQuads;
 }
 
-const optional<SymbolQuad>& SymbolInstance::iconQuad() const {
+const optional<SymbolQuads>& SymbolInstance::iconQuads() const {
     assert(sharedData);
-    return sharedData->iconQuad;
+    return sharedData->iconQuads;
 }
     
 bool SymbolInstance::hasText() const {
@@ -182,9 +182,9 @@ bool SymbolInstance::hasSdfIcon() const {
     return static_cast<bool>(symbolContent & SymbolContent::IconSDF);
 }
 
-const optional<SymbolQuad>& SymbolInstance::verticalIconQuad() const {
+const optional<SymbolQuads>& SymbolInstance::verticalIconQuads() const {
     assert(sharedData);
-    return sharedData->verticalIconQuad;
+    return sharedData->verticalIconQuads;
 }
 
 void SymbolInstance::releaseSharedData() {
