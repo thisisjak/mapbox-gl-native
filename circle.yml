@@ -170,14 +170,14 @@ workflows:
   #           branches:
   #             only:
   #               - master
-    jobs:
-      - metrics-nightly
-      - ios-release-template:
-          name: ios-release-nightly
-      - ios-sanitize-nightly
-      - ios-sanitize-address-nightly
-      - ios-static-analyzer-nightly
-      - ios-static-analyzer-nightly-xcode10
+    # jobs:
+    #   - metrics-nightly
+    #   - ios-release-template:
+    #       name: ios-release-nightly
+    #   - ios-sanitize-nightly
+    #   - ios-sanitize-address-nightly
+    #   - ios-static-analyzer-nightly
+    #   - ios-static-analyzer-nightly-xcode10
 
 executors:
   ubuntu-disco:
